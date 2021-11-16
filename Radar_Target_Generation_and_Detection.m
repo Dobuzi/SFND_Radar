@@ -52,7 +52,7 @@ t=linspace(0,Nd*Tchirp,Nr*Nd); %total time for samples
 %Creating the vectors for Tx, Rx and Mix based on the total samples input.
 Tx=zeros(1,length(t)); %transmitted signal
 Rx=zeros(1,length(t)); %received signal
-Mix = zeros(1,length(t)); %beat signal
+Mix=zeros(1,length(t)); %beat signal
 
 %Similar vectors for range_covered and time delay.
 r_t=zeros(1,length(t));
@@ -62,13 +62,12 @@ td=zeros(1,length(t));
 %% Signal generation and Moving Target simulation
 % Running the radar scenario over the time. 
 
-for i=1:length(t)         
-    
-    
+for i=1:length(t)
     % *%TODO* :
-    %For each time stamp update the Range of the Target for constant velocity. 
-    r_t(i) = R + v*t(i);
-    td(i) = 2*r_t(i) / c;
+    %For each time stamp update the Range of the Target for constant velocity.
+
+    r_t (i) = R + v * t(i);
+    td (i) = 2*r_t(i) / c;
 
     % *%TODO* :
     %For each time sample we need update the transmitted and
@@ -90,30 +89,33 @@ end
  % *%TODO* :
 %reshape the vector into Nr*Nd array. Nr and Nd here would also define the size of
 %Range and Doppler FFT respectively.
+Mix = reshape(Mix, [Nr, Nd]);
 
  % *%TODO* :
 %run the FFT on the beat signal along the range bins dimension (Nr) and
 %normalize.
+sig_fft = fft(Mix);
 
  % *%TODO* :
 % Take the absolute value of FFT output
+P2 = abs(sig_fft/Nr);
 
  % *%TODO* :
 % Output of FFT is double sided signal, but we are interested in only one side of the spectrum.
 % Hence we throw out half of the samples.
-
+P1 = P2(1:Nr/2+1);
 
 %plotting the range
 figure ('Name','Range from First FFT')
-subplot(2,1,1)
 
- % *%TODO* :
- % plot FFT output 
+% *%TODO* :
+% plot FFT output
+f = 2 * R_max * (0:(Nr/2)) / Nr;
+plot(f, P1);
+xlabel('Range (m)')
+ylabel('|P1(f)|')
 
- 
-axis ([0 200 0 1]);
-
-
+axis ([0 R_max 0 0.5]);
 
 %% RANGE DOPPLER RESPONSE
 % The 2D FFT implementation is already provided here. This will run a 2DFFT
