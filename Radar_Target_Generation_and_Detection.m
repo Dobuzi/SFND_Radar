@@ -74,14 +74,14 @@ for i=1:length(t)
     %received signal. 
     Tx(i) = cos(2*pi*(fc*t(i) + slope*t(i)^2 / 2));
     Rx(i) = cos(2*pi*(fc*(t(i) - td(i)) + slope*(t(i) - td(i))^2 / 2));
-    
+end    
     % *%TODO* :
     %Now by mixing the Transmit and Receive generate the beat signal
     %This is done by element wise matrix multiplication of Transmit and
-    %Receiver Signal
-    Mix(i) = Tx(i).*Rx(i);
-    
-end
+    %Receiver Signal    
+
+
+Mix = Tx.*Rx;
 
 %% RANGE MEASUREMENT
 
