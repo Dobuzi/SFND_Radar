@@ -138,7 +138,7 @@ sig_fft2 = fft2(Mix,Nr,Nd);
 sig_fft2 = sig_fft2(1:Nr/2,1:Nd);
 sig_fft2 = fftshift (sig_fft2);
 RDM = abs(sig_fft2);
-RDM = 10*log10(RDM) ;
+RDM = 10*log10(RDM);
 
 %use the surf function to plot the output of 2DFFT and to show axis in both
 %dimensions
@@ -152,17 +152,22 @@ figure,surf(doppler_axis,range_axis,RDM);
 
 % *%TODO* :
 %Select the number of Training Cells in both the dimensions.
+Tr = 20;
+Td = 10;
 
 % *%TODO* :
 %Select the number of Guard Cells in both dimensions around the Cell under 
 %test (CUT) for accurate estimation
+Gr = 8;
+Gd = 4;
 
 % *%TODO* :
 % offset the threshold by SNR value in dB
+offset = 6;
 
 % *%TODO* :
 %Create a vector to store noise_level for each iteration on training cells
-noise_level = zeros(1,1);
+noise_level = zeros(Nr/2-(2*Gr+2*Tr+1), Nd-(2*Gd+2*Td+1));
 
 
 % *%TODO* :
@@ -176,7 +181,22 @@ noise_level = zeros(1,1);
 %signal under CUT with this threshold. If the CUT level > threshold assign
 %it a value of 1, else equate it to 0.
 
+size_T = (2*(Tr+Gr)+1) * (2*(Td+Gd)+1) - (2*Gr+1) * (2*Gd+1);
+threshold_CFAR = zeros(Nr/2-(2*Gr+2*Tr+1), Nd-(2*Gd+2*Td+1));
+signal_CFAR = zeros(Nr/2, Nd);
 
+for i = 1:(Nr/2-(2*Gr+2*Tr+1))
+    for j = 1:(Nd-(2*Gd+2*Td+1))
+        noise_T = sum(db2pow(RDM(i:i+2*Tr+2*Gr-1, j:j+2*Td+2*Gd-1)), 'all');
+        noise_G = sum(db2pow(RDM(i+Tr:i+Tr+2*Gr-1, j+Td:j+Td+2*Gd-1)), 'all');
+        noise_level(i,j) = noise_T - noise_G;
+        threshold_CFAR(i,j) = pow2db(noise_level(i,j)/size_T) + offset;
+
+        if RDM(i+Tr+Gr,j+Td+Gd) > threshold_CFAR(i,j)
+            signal_CFAR(i+Tr+Gr,j+Td+Gd) = 1;
+        end
+    end
+end
    % Use RDM[x,y] as the matrix from the output of 2D FFT for implementing
    % CFAR
 
@@ -201,7 +221,7 @@ noise_level = zeros(1,1);
 % *%TODO* :
 %display the CFAR output using the Surf function like we did for Range
 %Doppler Response output.
-figure,surf(doppler_axis,range_axis,'replace this with output');
+figure,surf(doppler_axis,range_axis,signal_CFAR);
 colorbar;
 
 

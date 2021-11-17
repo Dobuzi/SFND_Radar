@@ -94,7 +94,7 @@ Mix = reshape(Mix, [Nr, Nd]);
  % *%TODO* :
 %run the FFT on the beat signal along the range bins dimension (Nr) and
 %normalize.
-sig_fft = fft(Mix, Nr);
+sig_fft = fft(Mix);
 
  % *%TODO* :
 % Take the absolute value of FFT output
@@ -107,16 +107,15 @@ P1 = P2(1:Nr/2+1);
 
 %plotting the range
 figure ('Name','Range from First FFT')
-subplot(2,1,1)
 
 % *%TODO* :
 % plot FFT output
-f = fc * (0:(Nr/2)) / Nr;
+f = 2 * R_max * (0:(Nr/2)) / Nr;
 plot(f, P1);
-xlabel('f (Hz)')
+xlabel('Range (m)')
 ylabel('|P1(f)|')
 
-axis ([0 200 0 1]);
+axis ([0 R_max 0 0.5]);
 
 %% RANGE DOPPLER RESPONSE
 % The 2D FFT implementation is already provided here. This will run a 2DFFT
@@ -139,7 +138,7 @@ sig_fft2 = fft2(Mix,Nr,Nd);
 sig_fft2 = sig_fft2(1:Nr/2,1:Nd);
 sig_fft2 = fftshift (sig_fft2);
 RDM = abs(sig_fft2);
-RDM = 10*log10(RDM) ;
+RDM = 10*log10(RDM);
 
 %use the surf function to plot the output of 2DFFT and to show axis in both
 %dimensions
@@ -153,13 +152,18 @@ figure,surf(doppler_axis,range_axis,RDM);
 
 % *%TODO* :
 %Select the number of Training Cells in both the dimensions.
+Tr = 10;
+Td = 8;
 
 % *%TODO* :
 %Select the number of Guard Cells in both dimensions around the Cell under 
 %test (CUT) for accurate estimation
+Gr = 4;
+Gd = 3;
 
 % *%TODO* :
 % offset the threshold by SNR value in dB
+offset = 5;
 
 % *%TODO* :
 %Create a vector to store noise_level for each iteration on training cells
@@ -177,7 +181,24 @@ noise_level = zeros(1,1);
 %signal under CUT with this threshold. If the CUT level > threshold assign
 %it a value of 1, else equate it to 0.
 
+size_T = (2*(Tr+Gr)+1) * (2*(Td+Gd)+1) - (2*Gr+1) * (2*Gd+1);
+threshold_CFAR = zeros(Nr/2-(2*Gr+2*Tr+1), Nd-(2*Gd+2*Td+1));
+signal_CFAR = zeros(Nr/2-(2*Gr+2*Tr+1), Nd-(2*Gd+2*Td+1));
 
+for i = 1:(Nr/2-(2*Gr+2*Tr+1))
+    for j = 1:(Nd-(2*Gd+2*Td+1))
+        noise_T = sum(Mix(i:i+2*Tr+2*Gr, j:j+2*Td+2*Gd));
+        noise_G = sum(Mix(i+Tr:i+Tr+2*Gr, j+Td:j+Td+Gd));
+        noise_level = db2pow(noise_T - noise_G);
+        threshold_CFAR(i,j) = pow2db(noise_level/size_T);
+
+        if Mix(i+Tr+Gr,j+Td+Gd) > threshold_CFAR
+            signal_CFAR(i,j) = 1;
+        else
+            signal_CFAR(i,j) = 0;
+        end
+    end
+end
    % Use RDM[x,y] as the matrix from the output of 2D FFT for implementing
    % CFAR
 
